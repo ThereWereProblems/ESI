@@ -2,6 +2,9 @@
 #include <string>
 #include <cmath>
 #include <stdlib.h>
+#include <iostream>
+#include <fstream>
+#include <cstring>
 /* Definicja pliku z zawartoœci¹ GUI */
 #define UI_FILE "main.ui"
 #define UI_SFILE "save.ui"
@@ -13,6 +16,7 @@ GtkWidget *button1;
 GtkComboBoxText *dysk;
 GtkWidget *scrolled;
 GtkWidget *info;
+GtkWidget *filname;
 
 gchar* directory;
 
@@ -180,9 +184,11 @@ extern "C" G_MODULE_EXPORT void on_button1_clicked(GtkButton *b)
 
     /* Pobiera obiekt z nazw¹ "window1" */
     okno = GTK_WIDGET( gtk_builder_get_object( builder, "filechooserdialog1" ) );
-
+    filname = GTK_WIDGET(gtk_builder_get_object(builder, "namefile"));
     /* Obiekt buildera nie bêdzie ju¿ nam potrzebny, wiêc go "zwalniamy" */
     g_object_unref( builder );
+
+
 
     gtk_widget_show(okno);
 }
@@ -233,7 +239,55 @@ extern "C" G_MODULE_EXPORT void on_filechooserdialog1_current_folder_changed(Gtk
 
 extern "C" G_MODULE_EXPORT void on_buttonc_clicked(GtkButton *b)
 {
-    printf(directory);
+
+    const gchar *  name = gtk_entry_get_text(GTK_ENTRY(filname));
+    const gchar * dir = directory;
+    if(0 == gtk_entry_get_text_length (GTK_ENTRY(filname)))
+        printf("bez nazwy");
+    if(directory == NULL)
+        printf("bbeakjfbsakfjbaskfb");
+    int sum = 0;
+    int Size = 0;
+    while (name[Size] != '\0') Size++;
+    sum += Size;
+    Size = 0;
+    while (dir[Size] != '\0') Size++;
+    sum += Size;
+    printf(dir);
+    printf(name);
+    printf("%d \n",sum);
+
+    char fullpath[sum+5];
+    sum = 0;
+    Size=0;
+
+    while (dir[Size] != '\0')
+    {
+        fullpath[sum]= dir[Size];
+        Size++;
+        sum++;
+    }
+    fullpath[sum] = '\\';
+    sum++;
+    Size = 0;
+    while (name[Size] != '\0')
+    {
+        fullpath[sum]= name[Size];
+        Size++;
+        sum++;
+    }
+    fullpath[sum] = '.';
+    fullpath[sum+1] = 'b';
+    fullpath[sum+2] = 'a';
+    fullpath[sum+3] = 't';
+
+    printf(fullpath);
+
+
+    /*std::ofstream myfile(fullpath);
+    myfile << "ipconfig\n";
+    myfile << "pause\n";
+    myfile.close();*/
 }
 
 
