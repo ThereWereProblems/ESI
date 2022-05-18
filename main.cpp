@@ -5,11 +5,14 @@
 /* Definicja pliku z zawartoœci¹ GUI */
 #define UI_FILE "main.ui"
 #define UI_SFILE "save.ui"
+#define UI_IFILE "info.ui"
+
 
 GtkWindow *mainWindow;
 GtkWidget *button1;
 GtkComboBoxText *dysk;
 GtkWidget *scrolled;
+GtkWidget *info;
 
 gchar* directory;
 
@@ -157,7 +160,7 @@ extern "C" G_MODULE_EXPORT void on_radiobutton3_toggled(GtkRadioButton *b)
     selectedInRadio = 2;
 }
 
-extern "C" G_MODULE_EXPORT void on_button1_clicked(GtkRadioButton *b)
+extern "C" G_MODULE_EXPORT void on_button1_clicked(GtkButton *b)
 {
     GtkWidget * okno;
     GtkBuilder * builder;
@@ -182,6 +185,45 @@ extern "C" G_MODULE_EXPORT void on_button1_clicked(GtkRadioButton *b)
     g_object_unref( builder );
 
     gtk_widget_show(okno);
+}
+
+extern "C" G_MODULE_EXPORT void  on_imagemenuitem10_button_press_event(GtkImageMenuItem *b)
+{
+    GtkWidget * okno;
+    GtkBuilder * builder;
+    GError * error = NULL;
+
+    GtkWidget * dialog;
+
+    /* Tworzy obiekt buildera */
+    builder = gtk_builder_new();
+    /* Wczytuje zawartoœæ interfejsu i sprawdza ewentualne b³êdy */
+    if( !gtk_builder_add_from_file( builder, UI_IFILE, & error ) )
+    {
+        g_warning( "Nie mo¿na wczytaæ plilu buildera: %s", error->message );
+        g_error_free( error );
+    }
+
+    /* £¹czy sygna³y zawarte w pliku interfejsu z odpowiednimi funkcjami */
+    gtk_builder_connect_signals( builder, NULL );
+
+    /* Pobiera obiekt z nazw¹ "window1" */
+    okno = GTK_WIDGET( gtk_builder_get_object( builder, "aboutdialog1" ) );
+    info = okno;
+    dialog = GTK_WIDGET( gtk_builder_get_object( builder, "dialog-action_area1" ) );
+    gtk_widget_set_visible (dialog, false);
+
+
+    //info = GTK_WINDOW(gtk_builder_get_object( builder, "aboutdialog1" ));
+    /* Obiekt buildera nie bêdzie ju¿ nam potrzebny, wiêc go "zwalniamy" */
+    g_object_unref( builder );
+
+    gtk_widget_show(okno);
+}
+
+extern "C" G_MODULE_EXPORT void on_buttonI_clicked(GtkButton *b)
+{
+    gtk_widget_set_visible (info, false);
 }
 
 extern "C" G_MODULE_EXPORT void on_filechooserdialog1_current_folder_changed(GtkFileChooser *b)
