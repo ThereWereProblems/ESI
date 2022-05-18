@@ -1,0 +1,4 @@
+# depslib dependency file v1.0
+1554041499 source:c:\users\matusiak\workspacecpp\hello\main.cpp
+	<gtk/gtk.h>
+
