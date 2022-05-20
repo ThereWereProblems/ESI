@@ -5,10 +5,14 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <exception>
+
 /* Definicja pliku z zawartoœci¹ GUI */
 #define UI_FILE "main.ui"
 #define UI_SFILE "save.ui"
 #define UI_IFILE "info.ui"
+#define UI_EFILE "error.ui"
+
 
 
 GtkWindow *mainWindow;
@@ -16,13 +20,48 @@ GtkWidget *button1;
 GtkComboBoxText *dysk;
 GtkWidget *scrolled;
 GtkWidget *info;
+GtkWidget *errWin;
 GtkWidget *filname;
 
 gchar* directory;
+std::string res;
+int index;
+
+GtkCheckButton *bF;
+GtkCheckButton *bV;
+GtkCheckButton *bR;
+GtkCheckButton *bX;
+GtkCheckButton *bI;
+GtkCheckButton *bC;
+GtkCheckButton *bB;
+GtkCheckButton *bscan;
+GtkCheckButton *bforceofflinefix;
+GtkCheckButton *bperf;
+GtkCheckButton *bspotfix;
+GtkCheckButton *bsdcleanup;
+GtkCheckButton *bofflinescanandfix;
+GtkCheckButton *bfreeorphanedchainds;
+GtkCheckButton *bmarkclean;
 
 int selectedInCombo;
 bool activeVisable;
 int selectedInRadio;
+
+struct SystemFileException : public std::exception
+{
+	const char * what () const throw ()
+    {
+    	return "Nieprawidłowe parametry dla wybrajej struktury plików";
+    }
+};
+struct EmptyNameException : public std::exception
+{
+	const char * what () const throw ()
+    {
+    	return "Wprowadź nazwę pliku";
+    }
+};
+
 
 
 GtkWidget * utworz_okno( void )
@@ -56,74 +95,26 @@ GtkWidget * utworz_okno( void )
     mainWindow = GTK_WINDOW( gtk_builder_get_object( builder, "window1" ) );
     gtk_window_resize(mainWindow,400,200);
 
-    /*
-    kwota = GTK_WIDGET(gtk_builder_get_object(builder, "entry1"));
-    ileRat = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spinbutton1"));
-    odstep = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "comboboxtext1"));
-    oprocentowanie = GTK_WIDGET(gtk_builder_get_object(builder, "entry2"));
-    */
-
-    //gtk_combo_box_set_active(GTK_COMBO_BOX(odstep),0);
-
-    //GtkAdjustment  * adj = (GtkAdjustment *) gtk_adjustment_new(1, 1, 24, 1, 1, 0);
-    //gtk_spin_button_set_adjustment(ileRat,adj);
-
-    //wynik = GTK_WIDGET(gtk_builder_get_object(builder, "label7"));
-
+    bF = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton1"));
+    bV = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton2"));
+    bR = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton3"));
+    bX = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton4"));
+    bI = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton5"));
+    bC = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton6"));
+    bB = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton7"));
+    bscan = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton8"));
+    bforceofflinefix = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton9"));
+    bperf = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton10"));
+    bspotfix = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton11"));
+    bsdcleanup = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton12"));
+    bofflinescanandfix = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton13"));
+    bfreeorphanedchainds = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton14"));
+    bmarkclean = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "checkbutton15"));
 
     /* Obiekt buildera nie bêdzie ju¿ nam potrzebny, wiêc go "zwalniamy" */
     g_object_unref( builder );
 
     return okno;
-}
-
-void Rata(){
-    /*
-    const gchar * kw = gtk_entry_get_text(GTK_ENTRY(kwota));
-    const gchar * il = gtk_entry_get_text(GTK_ENTRY(ileRat));
-    const int od = gtk_combo_box_get_active(GTK_COMBO_BOX(odstep));
-    const gchar * op = gtk_entry_get_text(GTK_ENTRY(oprocentowanie));
-
-
-    double s = (float)strtod(kw,NULL);
-    if(s<100 || s> 100000){
-        gtk_label_set_text(GTK_LABEL(wynik), "Nieprawidłowa wartość kredytu");
-        return;
-    }
-
-    double n = (float)strtod(il,NULL);
-    double x;
-    if(od==0)
-        x=1;
-    else if(od==1)
-        x=2;
-    else if(od==2)
-        x=3;
-    else if(od==3)
-        x=6;
-    else if(od==4)
-        x=12;
-    else if(od==5)
-        x=24;
-
-    double R = (float)strtod(op,NULL);
-    if(R<0 || R> 50){
-        gtk_label_set_text(GTK_LABEL(wynik), "Nieprawidłowa wartość oprocentowania");
-        return;
-    }
-
-    double r = (x*R)/1200;
-
-    double q = 1+r;
-
-    double A = s*pow(q,n)*((q-1)/(pow(q,n)-1));
-
-    char v_str[20];
-
-    sprintf(v_str, "%.2f", A);
-
-    gtk_label_set_text(GTK_LABEL(wynik), v_str);
-    */
 }
 
 extern "C" G_MODULE_EXPORT void on_comboboxtext1_changed(GtkComboBoxText *b)
@@ -166,6 +157,9 @@ extern "C" G_MODULE_EXPORT void on_radiobutton3_toggled(GtkRadioButton *b)
 
 extern "C" G_MODULE_EXPORT void on_button1_clicked(GtkButton *b)
 {
+    bool a = CreateCommond();
+    if(!a)
+        return;
     GtkWidget * okno;
     GtkBuilder * builder;
     GError * error = NULL;
@@ -232,6 +226,11 @@ extern "C" G_MODULE_EXPORT void on_buttonI_clicked(GtkButton *b)
     gtk_widget_set_visible (info, false);
 }
 
+extern "C" G_MODULE_EXPORT void on_buttone_clicked(GtkButton *b)
+{
+    gtk_widget_set_visible (errWin, false);
+}
+
 extern "C" G_MODULE_EXPORT void on_filechooserdialog1_current_folder_changed(GtkFileChooser *b)
 {
     directory = gtk_file_chooser_get_current_folder(b);
@@ -239,7 +238,6 @@ extern "C" G_MODULE_EXPORT void on_filechooserdialog1_current_folder_changed(Gtk
 
 extern "C" G_MODULE_EXPORT void on_buttonc_clicked(GtkButton *b)
 {
-
     const gchar *  name = gtk_entry_get_text(GTK_ENTRY(filname));
     const gchar * dir = directory;
     if(0 == gtk_entry_get_text_length (GTK_ENTRY(filname)))
@@ -284,12 +282,206 @@ extern "C" G_MODULE_EXPORT void on_buttonc_clicked(GtkButton *b)
     printf(fullpath);
 
 
-    /*std::ofstream myfile(fullpath);
-    myfile << "ipconfig\n";
+    std::ofstream myfile(fullpath);
+    std::string com = "ipconfig\n";
+    myfile << com;
     myfile << "pause\n";
-    myfile.close();*/
+    myfile.close();
 }
 
+bool CreateCommond(){
+
+    try{
+            res = "chkdsk ";
+
+        int ds = gtk_combo_box_get_active(GTK_COMBO_BOX(dysk));
+
+        switch (ds)
+        {
+        case 0:
+            res += "A:/";
+            break;
+        case 1:
+            res += "B:/";
+            break;
+        case 2:
+            res += "C:/";
+            break;
+        case 3:
+            res += "D:/";
+            break;
+        case 4:
+            res += "E:/";
+            break;
+        case 5:
+            res += "F:/";
+            break;
+        case 6:
+            res += "G:/";
+            break;
+        case 7:
+            res += "H:/";
+            break;
+        case 8:
+            res += "I:/";
+            break;
+        case 9:
+            res += "J:/";
+            break;
+        case 10:
+            res += "K:/";
+            break;
+        case 11:
+            res += "L:/";
+            break;
+        case 12:
+            res += "M:/";
+            break;
+        case 13:
+            res += "N:/";
+            break;
+        case 14:
+            res += "O:/";
+            break;
+        case 15:
+            res += "P:/";
+            break;
+        case 16:
+            res += "Q:/";
+            break;
+        case 17:
+            res += "R:/";
+            break;
+        case 18:
+            res += "S:/";
+            break;
+        case 19:
+            res += "T:/";
+            break;
+        case 20:
+            res += "U:/";
+            break;
+        case 21:
+            res += "V:/";
+            break;
+        case 22:
+            res += "W:/";
+            break;
+        case 23:
+            res += "X:/";
+            break;
+        case 24:
+            res += "Y:/";
+            break;
+        case 25:
+            res += "Z:/";
+            break;
+        default:
+            res += "C:/";
+      }
+
+        if(selectedInRadio != 0)
+        res += "*.*";
+
+        if(gtk_widget_get_visible (scrolled))
+        {
+            //parametry
+            if(gtk_check_button_get_active(bF))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bV))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bR))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bX))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bI))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bC))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bB))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bF))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bF))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bF))
+            {
+                res +=" /F";
+            }
+            if(gtk_check_button_get_active(bF))
+            {
+                res +=" /F";
+            }
+
+GtkCheckButton *bscan;
+GtkCheckButton *bforceofflinefix;
+GtkCheckButton *bperf;
+GtkCheckButton *bspotfix;
+GtkCheckButton *bsdcleanup;
+GtkCheckButton *bofflinescanandfix;
+GtkCheckButton *bfreeorphanedchainds;
+GtkCheckButton *bmarkclean;
+        }
+
+    }
+    catch (SystemFileException& e)
+    {
+    	ShowError();
+    	return false;
+    }
+    catch (std::exception& e)
+    {
+    	ShowError();
+    	return false;
+    }
+    return true;
+}
+
+void ShowError(){
+    GtkWidget * okno;
+    GtkBuilder * builder;
+    GError * error = NULL;
+
+    /* Tworzy obiekt buildera */
+    builder = gtk_builder_new();
+    /* Wczytuje zawartoœæ interfejsu i sprawdza ewentualne b³êdy */
+    if( !gtk_builder_add_from_file( builder, UI_EFILE, & error ) )
+    {
+        g_warning( "Nie mo¿na wczytaæ plilu buildera: %s", error->message );
+        g_error_free( error );
+    }
+
+    /* £¹czy sygna³y zawarte w pliku interfejsu z odpowiednimi funkcjami */
+    gtk_builder_connect_signals( builder, NULL );
+
+    /* Pobiera obiekt z nazw¹ "window1" */
+    okno = GTK_WIDGET( gtk_builder_get_object( builder, "messagedialog1" ) );
+    /* Obiekt buildera nie bêdzie ju¿ nam potrzebny, wiêc go "zwalniamy" */
+    errWin = okno;
+    g_object_unref( builder );
+
+
+
+    gtk_widget_show(okno);
+}
 
 int main( int argc, char * argv[] )
 {
