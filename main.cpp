@@ -22,6 +22,8 @@ GtkWidget *scrolled;
 GtkWidget *info;
 GtkWidget *errWin;
 GtkWidget *filname;
+GtkWidget *saveWindow;
+
 
 gchar* directory;
 std::string res;
@@ -62,7 +64,8 @@ struct EmptyNameException : public std::exception
     }
 };
 
-
+void ShowError(std::string message);
+bool CreateCommond();
 
 GtkWidget * utworz_okno( void )
 {
@@ -142,17 +145,20 @@ extern "C" G_MODULE_EXPORT void on_imagemenuitem5_button_press_event(GtkImageMen
 
 extern "C" G_MODULE_EXPORT void on_radiobutton1_toggled(GtkRadioButton *b)
 {
-    selectedInRadio = 0;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(b)))
+        selectedInRadio = 0;
 }
 
 extern "C" G_MODULE_EXPORT void on_radiobutton2_toggled(GtkRadioButton *b)
 {
-    selectedInRadio = 1;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(b)))
+        selectedInRadio = 1;
 }
 
 extern "C" G_MODULE_EXPORT void on_radiobutton3_toggled(GtkRadioButton *b)
 {
-    selectedInRadio = 2;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(b)))
+        selectedInRadio = 2;
 }
 
 extern "C" G_MODULE_EXPORT void on_button1_clicked(GtkButton *b)
@@ -179,6 +185,7 @@ extern "C" G_MODULE_EXPORT void on_button1_clicked(GtkButton *b)
     /* Pobiera obiekt z nazw¹ "window1" */
     okno = GTK_WIDGET( gtk_builder_get_object( builder, "filechooserdialog1" ) );
     filname = GTK_WIDGET(gtk_builder_get_object(builder, "namefile"));
+    saveWindow = okno;
     /* Obiekt buildera nie bêdzie ju¿ nam potrzebny, wiêc go "zwalniamy" */
     g_object_unref( builder );
 
@@ -238,58 +245,65 @@ extern "C" G_MODULE_EXPORT void on_filechooserdialog1_current_folder_changed(Gtk
 
 extern "C" G_MODULE_EXPORT void on_buttonc_clicked(GtkButton *b)
 {
-    const gchar *  name = gtk_entry_get_text(GTK_ENTRY(filname));
-    const gchar * dir = directory;
-    if(0 == gtk_entry_get_text_length (GTK_ENTRY(filname)))
-        printf("bez nazwy");
-    if(directory == NULL)
-        printf("bbeakjfbsakfjbaskfb");
-    int sum = 0;
-    int Size = 0;
-    while (name[Size] != '\0') Size++;
-    sum += Size;
-    Size = 0;
-    while (dir[Size] != '\0') Size++;
-    sum += Size;
-    printf(dir);
-    printf(name);
-    printf("%d \n",sum);
+    bool udanyZapis = false;
 
-    char fullpath[sum+5];
-    sum = 0;
-    Size=0;
+    try{
+        const gchar *  name = gtk_entry_get_text(GTK_ENTRY(filname));
+        const gchar * dir = directory;
 
-    while (dir[Size] != '\0')
-    {
-        fullpath[sum]= dir[Size];
-        Size++;
-        sum++;
+        if(0 == gtk_entry_get_text_length (GTK_ENTRY(filname)))
+            throw EmptyNameException();
+
+        std::string fullpath = "";
+
+        int Size=0;
+
+        if(directory != NULL){
+            while (dir[Size] != '\0')
+            {
+                fullpath += dir[Size];
+                Size++;
+            }
+            fullpath += '\\';
+        }
+
+        Size = 0;
+        while (name[Size] != '\0')
+        {
+            fullpath += name[Size];
+            Size++;
+        }
+
+        fullpath += ".bat";
+
+
+        int n = fullpath.length();
+        char char_array[n + 1];
+
+        strcpy(char_array, fullpath.c_str());
+
+
+        std::ofstream myfile(char_array);
+        myfile << res+"\n";
+        myfile << "pause\n";
+        myfile.close();
+        udanyZapis = true;
+
     }
-    fullpath[sum] = '\\';
-    sum++;
-    Size = 0;
-    while (name[Size] != '\0')
+    catch (EmptyNameException& e)
     {
-        fullpath[sum]= name[Size];
-        Size++;
-        sum++;
+    	ShowError("Wpisz nazwę pliku!");
     }
-    fullpath[sum] = '.';
-    fullpath[sum+1] = 'b';
-    fullpath[sum+2] = 'a';
-    fullpath[sum+3] = 't';
-
-    printf(fullpath);
-
-
-    std::ofstream myfile(fullpath);
-    std::string com = "ipconfig\n";
-    myfile << com;
-    myfile << "pause\n";
-    myfile.close();
+    catch (std::exception& e)
+    {
+    	ShowError("Podczas zapisu wystąpiły problemy");
+    }
+    if(udanyZapis == true)
+        gtk_widget_set_visible (saveWindow,  false);
 }
 
-bool CreateCommond(){
+bool CreateCommond()
+{
 
     try{
             res = "chkdsk ";
@@ -299,163 +313,196 @@ bool CreateCommond(){
         switch (ds)
         {
         case 0:
-            res += "A:/";
+            res += "A:";
             break;
         case 1:
-            res += "B:/";
+            res += "B:";
             break;
         case 2:
-            res += "C:/";
+            res += "C:";
             break;
         case 3:
-            res += "D:/";
+            res += "D:";
             break;
         case 4:
-            res += "E:/";
+            res += "E:";
             break;
         case 5:
-            res += "F:/";
+            res += "F:";
             break;
         case 6:
-            res += "G:/";
+            res += "G:";
             break;
         case 7:
-            res += "H:/";
+            res += "H:";
             break;
         case 8:
-            res += "I:/";
+            res += "I:";
             break;
         case 9:
-            res += "J:/";
+            res += "J:";
             break;
         case 10:
-            res += "K:/";
+            res += "K:";
             break;
         case 11:
-            res += "L:/";
+            res += "L:";
             break;
         case 12:
-            res += "M:/";
+            res += "M:";
             break;
         case 13:
-            res += "N:/";
+            res += "N:";
             break;
         case 14:
-            res += "O:/";
+            res += "O:";
             break;
         case 15:
-            res += "P:/";
+            res += "P:";
             break;
         case 16:
-            res += "Q:/";
+            res += "Q:";
             break;
         case 17:
-            res += "R:/";
+            res += "R:";
             break;
         case 18:
-            res += "S:/";
+            res += "S:";
             break;
         case 19:
-            res += "T:/";
+            res += "T:";
             break;
         case 20:
-            res += "U:/";
+            res += "U:";
             break;
         case 21:
-            res += "V:/";
+            res += "V:";
             break;
         case 22:
-            res += "W:/";
+            res += "W:";
             break;
         case 23:
-            res += "X:/";
+            res += "X:";
             break;
         case 24:
-            res += "Y:/";
+            res += "Y:";
             break;
         case 25:
-            res += "Z:/";
+            res += "Z:";
             break;
         default:
-            res += "C:/";
+            res += "C:";
       }
 
         if(selectedInRadio != 0)
-        res += "*.*";
+        res += "\\*.*";
 
         if(gtk_widget_get_visible (scrolled))
         {
             //parametry
-            if(gtk_check_button_get_active(bF))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bF)))
             {
                 res +=" /F";
             }
-            if(gtk_check_button_get_active(bV))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bV)))
             {
-                res +=" /F";
+                res +=" /V";
             }
-            if(gtk_check_button_get_active(bR))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bR)))
             {
-                res +=" /F";
+                res +=" /R";
             }
-            if(gtk_check_button_get_active(bX))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bX)))
             {
-                res +=" /F";
+                res +=" /X";
             }
-            if(gtk_check_button_get_active(bI))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bI)))
             {
-                res +=" /F";
+                res +=" /I";
+                if(selectedInRadio != 0)
+                    throw SystemFileException();
             }
-            if(gtk_check_button_get_active(bC))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bC)))
             {
-                res +=" /F";
+                res +=" /C";
+                if(selectedInRadio != 0)
+                    throw SystemFileException();
             }
-            if(gtk_check_button_get_active(bB))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bB)))
             {
-                res +=" /F";
+                res +=" /B";
+                if(selectedInRadio != 0)
+                    throw SystemFileException();
             }
-            if(gtk_check_button_get_active(bF))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bscan)))
             {
-                res +=" /F";
+                res +=" /scan";
+                if(selectedInRadio != 0)
+                    throw SystemFileException();
             }
-            if(gtk_check_button_get_active(bF))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bforceofflinefix)))
             {
-                res +=" /F";
+                res +=" /forceofflinefix";
+                if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bscan)))
+                    throw SystemFileException();
             }
-            if(gtk_check_button_get_active(bF))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bperf)))
             {
-                res +=" /F";
+                res +=" /perf";
+                if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bscan)))
+                    throw SystemFileException();
             }
-            if(gtk_check_button_get_active(bF))
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bspotfix)))
             {
-                res +=" /F";
+                res +=" /spotfix";
+                if(selectedInRadio != 0)
+                    throw SystemFileException();
             }
-
-GtkCheckButton *bscan;
-GtkCheckButton *bforceofflinefix;
-GtkCheckButton *bperf;
-GtkCheckButton *bspotfix;
-GtkCheckButton *bsdcleanup;
-GtkCheckButton *bofflinescanandfix;
-GtkCheckButton *bfreeorphanedchainds;
-GtkCheckButton *bmarkclean;
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bsdcleanup)))
+            {
+                res +=" /sdcleanup";
+                if(selectedInRadio != 0)
+                    throw SystemFileException();
+            }
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bofflinescanandfix)))
+            {
+                res +=" /offlinescanandfix";
+            }
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bfreeorphanedchainds)))
+            {
+                res +=" /freeorphanedchainds";
+                if(selectedInRadio == 0)
+                    throw SystemFileException();
+            }
+            if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(bmarkclean)))
+            {
+                res +=" /markclean";
+                if(selectedInRadio == 0)
+                    throw SystemFileException();
+            }
         }
 
     }
     catch (SystemFileException& e)
     {
-    	ShowError();
+    	ShowError("Nieprawidłowo dobrane argumęty polecenia!");
     	return false;
     }
     catch (std::exception& e)
     {
-    	ShowError();
+    	ShowError("Coś poszło nie tak!");
     	return false;
     }
     return true;
 }
 
-void ShowError(){
+void ShowError(std::string message)
+{
+    int n = message.length();
+    char char_array[n + 1];
+    strcpy(char_array, message.c_str());
+
+
     GtkWidget * okno;
     GtkBuilder * builder;
     GError * error = NULL;
@@ -478,7 +525,7 @@ void ShowError(){
     errWin = okno;
     g_object_unref( builder );
 
-
+    gtk_message_dialog_set_markup (GTK_MESSAGE_DIALOG(okno),char_array);
 
     gtk_widget_show(okno);
 }
